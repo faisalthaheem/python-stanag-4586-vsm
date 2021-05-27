@@ -1,0 +1,4 @@
+prettyprint
+pytest
+pytest-runner
+stanag4586edav1
