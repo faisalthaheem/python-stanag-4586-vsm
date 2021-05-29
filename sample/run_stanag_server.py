@@ -7,8 +7,11 @@ from stanag4586vsm.stanag_server import *
 FORMAT = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 logging.basicConfig(format=FORMAT)
 
+logger = logging.getLogger("main")
+logger.setLevel(logging.DEBUG)
+
 def ask_exit(signame, loop):
-    print("got signal %s: exit" % signame)
+    logger.critical("got signal [{%s}]: exit".format(signame))
     loop.stop()
 
 async def main():
@@ -21,12 +24,12 @@ async def main():
     #         getattr(signal, signame),
     #         functools.partial(ask_exit, signame, loop))
 
-    print("Creating server")
-    await server.createUDPServer(loop)
+    logger.debug("Creating server")
+    await server.setup_service(loop)
 
-    print("Listening, press Ctrl+C to terminate")
+    logger.info("Listening, press Ctrl+C to terminate")
     await asyncio.sleep(3600*100)
 
-    print("Server exiting")
+    logger.info("Server exiting")
 
 asyncio.run(main())
