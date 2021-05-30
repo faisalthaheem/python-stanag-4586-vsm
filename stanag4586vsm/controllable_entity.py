@@ -1,8 +1,10 @@
+from enum import auto
 import logging
 import pprint
 from stanag4586edav1.message_wrapper import *
 from stanag4586edav1.message01 import *
 from stanag4586edav1.message20 import *
+from stanag4586edav1.message21 import *
 
 class ControllableEntity:
 
@@ -90,8 +92,53 @@ class ControllableEntity:
 
     def respond_21(self, wrapper, msg):
         self.logger.debug("Responding with Message 21")
-        pass
+        
+        msg21 = Message21(MSG21_NULL)
+
+        msg21.time_stamp = 0x00
+        msg21.vehicle_id = self.__vehicle_id
+        msg21.cucs_id = msg.cucs_id
+        msg21.vsm_id = self.__vsm_id
+        msg21.data_link_id = 0x0
+        msg21.loi_authorized = self.get_loi_authorized(msg.cucs_id)
+        msg21.loi_granted = self.get_loi_granted(msg.cucs_id)
+        msg21.controlled_station = self.__station_id
+        msg21.controlled_station_mode = 1 if ( (msg21.loi_granted and LOI_05) == LOI_05) else 0
+        msg21.vehicle_type = 0x00 #todo get from config
+        msg21.vehicle_sub_type = 0x00 #todo get from config
+
+        msg21_encoded = msg21.encode()
+        wrapped_reply = MessageWrapper(MESSAGE_WRAPPER_NULL)
+        wrapped_reply.wrap_message(wrapper.msg_instance_id, 0x21, len(msg21_encoded), False)
+        encoded_msg = wrapped_reply.encode() + msg21_encoded
+
+        self.__loop.call_soon(self.__callback_tx_data, encoded_msg)
 
     def respond_300(self, wrapper, msg):
         self.logger.debug("Responding with Message 300")
         pass
+
+    def get_loi_granted(self, requesting_cucs_id):
+        """Calculates and returns the loi_granted field value given a cucs_id"""
+        
+        granted_loi = 0
+        
+        if self.__controlling_cucs_id == requesting_cucs_id:
+            granted_loi = LOI_05
+        
+        if requesting_cucs_id in self.__monitoring_cucs_list:
+            """This is a repeat in case the previous statment is true since there is no control without monitoring"""
+            granted_loi = (granted_loi or LOI_02)
+
+        return granted_loi
+
+    def get_loi_authorized(self, requesting_cucs_id):
+        """Calculates and returns the loi_authorized field value given a cucs_id"""
+        
+        """By default everyone can monitor"""
+        authorized_loi = LOI_02
+
+        if self.__controlling_cucs_id in [0, requesting_cucs_id]:
+            authorized_loi = (authorized_loi or LOI_05)
+        
+        return authorized_loi
