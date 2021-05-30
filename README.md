@@ -1,5 +1,5 @@
 # About
-Minimal implementation of a STANAG 4586 Vehicle Specific Module (VSM) which uses a lower level library [python-stanag-4586-EDA-v1](https://github.com/faisalthaheem/python-stanag-4586-EDA-v1) to communicate.
+Minimal implementation of a STANAG 4586 Vehicle Specific Module (VSM) which uses a lower level library [python-stanag-4586-EDA-v1](https://github.com/faisalthaheem/python-stanag-4586-EDA-v1) to exchange STANAG messages with a remote CUCS.
 
 This library uses asyncio to create two UDP mulicast sockets, one for sending and other for receiving STANG 4586 messages.
 
