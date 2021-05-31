@@ -5,6 +5,7 @@ from stanag4586edav1.message_wrapper import *
 from stanag4586edav1.message01 import *
 from stanag4586edav1.message20 import *
 from stanag4586edav1.message21 import *
+from stanag4586edav1.message300 import *
 
 class ControllableEntity:
 
@@ -14,6 +15,8 @@ class ControllableEntity:
     __monitoring_cucs_list = []
     __controlling_cucs_id = 0x0
     __loop = None
+    __available_stations = 0x00
+    __payload_type = 0x00
 
     def __init__(self, loop, debug_level, station_id, vsm_id, vehicle_id, callback_tx_data):
         self.__loop = loop
@@ -59,10 +62,11 @@ class ControllableEntity:
         self.logger.debug("Handling discovery request")
 
         self.respond_21(wrapper, msg)
-        self.respond_20(wrapper, msg)
 
-        if self.__station_id == 0x0:
-            self.respond_300(msg, wrapper)
+        if self.__station_id == 0x0: #base platform
+            self.respond_20(wrapper, msg)
+
+        self.respond_300(wrapper, msg)
 
     def respond_20(self, wrapper, msg):
         self.logger.debug("Responding with Message 20")
@@ -116,7 +120,30 @@ class ControllableEntity:
 
     def respond_300(self, wrapper, msg):
         self.logger.debug("Responding with Message 300")
-        pass
+        
+        msg300 = Message300(MSG300_NULL)
+        msg300.time_stamp = 0x00
+        msg300.vehicle_id = self.__vehicle_id
+        msg300.cucs_id = msg.cucs_id
+        msg300.vsm_id = self.__vsm_id
+        msg300.station_number = self.__station_id
+
+        if self.__station_id == 0x0:
+            msg300.payload_stations_available = self.__available_stations
+            msg300.payload_type = STATION_TYPE_UNSPECIFIED
+        else:
+            msg300.payload_stations_available = 0x00
+            msg300.payload_type = self.__payload_type
+        
+        msg300.station_door = 0x00
+        msg300.number_of_payload_recording_devices = 0x00
+
+        msg300_encoded = msg300.encode()
+        wrapped_reply = MessageWrapper(MESSAGE_WRAPPER_NULL)
+        wrapped_reply.wrap_message(wrapper.msg_instance_id, 0x300, len(msg300_encoded), False)
+        encoded_msg = wrapped_reply.encode() + msg300_encoded
+
+        self.__loop.call_soon(self.__callback_tx_data, encoded_msg)
 
     def get_loi_granted(self, requesting_cucs_id):
         """Calculates and returns the loi_granted field value given a cucs_id"""
@@ -142,3 +169,9 @@ class ControllableEntity:
             authorized_loi = (authorized_loi or LOI_05)
         
         return authorized_loi
+
+    def set_available_stations(self, available_stations):
+        self.__available_stations = available_stations
+    
+    def set_payload_type(self, __payload_type):
+        self.__payload_type = __payload_type

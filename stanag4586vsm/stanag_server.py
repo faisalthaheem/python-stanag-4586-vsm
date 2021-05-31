@@ -4,10 +4,11 @@ import struct
 from .stanag_protocol import StanagProtocol
 from .controllable_entity import ControllableEntity
 import logging
+from stanag4586edav1.message300 import *
 
 class StanagServer:
     
-    __controllable_entities = []
+    __controllable_entities = {}
     
     def __init__(self, debug_level):
         self.logger = logging.getLogger('StanagServer')
@@ -55,16 +56,19 @@ class StanagServer:
         
     def create_entities(self, loop):
         """Creates all the sensors and stations that can be controlled by CUCS. Returns nothing."""
-        self.__controllable_entities.append(
-            ControllableEntity(loop, self.debug_level, 0x0, 0x1, 0x1, self.tx_data)
-        )
+        
+        self.__controllable_entities['base'] = ControllableEntity(loop, self.debug_level, 0x0, 0x1, 0x1, self.tx_data)
+        self.__controllable_entities['eo'] = ControllableEntity(loop, self.debug_level, 0x1, 0x1, 0x1, self.tx_data)
+        
+        self.__controllable_entities['base'].set_available_stations(0x01)
+        self.__controllable_entities['eo'].set_payload_type(STATION_TYPE_EO)
 
     def on_msg_rx(self, wrapper, msg):
         """Callback passed to stanag protocal and is invoked when a known message arrives."""
         self.logger.debug("Got message [{}]".format(wrapper.message_type))
 
-        for e in self.__controllable_entities:
-            if True == e.handle_message(wrapper, msg):
+        for k,v in self.__controllable_entities.items():
+            if True == v.handle_message(wrapper, msg):
                 return
 
         # we got a message that was not understood....
