@@ -36,13 +36,17 @@ class ControllableEntity:
             self.logger.debug("Message is auth request.")
             return self.handle_auth_message(wrapper, msg)
 
+        return self.process_incoming_message(wrapper. msg)
+
+    def process_incoming_message(self, wrapper, msg):
+        """child should provide implementation"""
         return False
 
     def handle_auth_message(self, wrapper, msg):
     
-        if  (msg.vehicle_id and MSG_01_BROADCAST_ID) == MSG_01_BROADCAST_ID and \
-            (msg.vsm_id and MSG_01_BROADCAST_ID) == MSG_01_BROADCAST_ID and \
-            (msg.controlled_station and MSG_01_BROADCAST_ID) == MSG_01_BROADCAST_ID:
+        if  (msg.vehicle_id & MSG_01_BROADCAST_ID) == MSG_01_BROADCAST_ID and \
+            (msg.vsm_id & MSG_01_BROADCAST_ID) == MSG_01_BROADCAST_ID and \
+            (msg.controlled_station & MSG_01_BROADCAST_ID) == MSG_01_BROADCAST_ID:
             self.logger.debug("Message is of type discovery")
             self.handle_broadcast(wrapper, msg)
             return False # to let the chain continue to be called at caller end
@@ -53,9 +57,6 @@ class ControllableEntity:
             return True
 
         return False
-
-    def handle_loi_request(self, wrapper, msg):
-        pass
 
     def handle_broadcast(self, wrapper, msg):
         
@@ -86,12 +87,10 @@ class ControllableEntity:
         msg20.atc_call_sign = b"\x31\x32\x33\x34" #todo be filled from some config in future
         msg20.configuration_checksum = 0xABCD
 
-        msg20_encoded = msg20.encode()
         wrapped_reply = MessageWrapper(MESSAGE_WRAPPER_NULL)
-        wrapped_reply.wrap_message(wrapper.msg_instance_id, 0x20, len(msg20_encoded), False)
-        encoded_msg = wrapped_reply.encode() + msg20_encoded
+        wrapped_reply = wrapped_reply.wrap_message(wrapper.msg_instance_id, 0x20, msg20, False)
 
-        self.__loop.call_soon(self.__callback_tx_data, encoded_msg)
+        self.__loop.call_soon(self.__callback_tx_data, wrapped_reply)
 
 
     def respond_21(self, wrapper, msg):
@@ -107,16 +106,14 @@ class ControllableEntity:
         msg21.loi_authorized = self.get_loi_authorized(msg.cucs_id)
         msg21.loi_granted = self.get_loi_granted(msg.cucs_id)
         msg21.controlled_station = self.__station_id
-        msg21.controlled_station_mode = 1 if ( (msg21.loi_granted and LOI_05) == LOI_05) else 0
+        msg21.controlled_station_mode = 1 if ( (msg21.loi_granted & LOI_05) == LOI_05) else 0
         msg21.vehicle_type = 0x00 #todo get from config
         msg21.vehicle_sub_type = 0x00 #todo get from config
 
-        msg21_encoded = msg21.encode()
         wrapped_reply = MessageWrapper(MESSAGE_WRAPPER_NULL)
-        wrapped_reply.wrap_message(wrapper.msg_instance_id, 0x21, len(msg21_encoded), False)
-        encoded_msg = wrapped_reply.encode() + msg21_encoded
+        wrapped_reply = wrapped_reply.wrap_message(wrapper.msg_instance_id, 0x21, msg21, False)
 
-        self.__loop.call_soon(self.__callback_tx_data, encoded_msg)
+        self.__loop.call_soon(self.__callback_tx_data, wrapped_reply)
 
     def respond_300(self, wrapper, msg):
         self.logger.debug("Responding with Message 300")
@@ -138,12 +135,10 @@ class ControllableEntity:
         msg300.station_door = 0x00
         msg300.number_of_payload_recording_devices = 0x00
 
-        msg300_encoded = msg300.encode()
         wrapped_reply = MessageWrapper(MESSAGE_WRAPPER_NULL)
-        wrapped_reply.wrap_message(wrapper.msg_instance_id, 0x300, len(msg300_encoded), False)
-        encoded_msg = wrapped_reply.encode() + msg300_encoded
+        wrapped_reply = wrapped_reply.wrap_message(wrapper.msg_instance_id, 0x300, msg300, False)
 
-        self.__loop.call_soon(self.__callback_tx_data, encoded_msg)
+        self.__loop.call_soon(self.__callback_tx_data, wrapped_reply)
 
     def get_loi_granted(self, requesting_cucs_id):
         """Calculates and returns the loi_granted field value given a cucs_id"""
@@ -175,3 +170,67 @@ class ControllableEntity:
     
     def set_payload_type(self, __payload_type):
         self.__payload_type = __payload_type
+
+    def is_control_bit_set(self, msg):
+
+        CONTROL_LOI_BIT = LOI_03 if self.__station_id != 0 else LOI_05
+        
+        return (msg.requested_handover_loi & CONTROL_LOI_BIT) == CONTROL_LOI_BIT
+
+    def is_monitor_bit_set(self, msg):
+
+        return (msg.requested_handover_loi & LOI_02) == LOI_02
+
+    def add_cucs_to_monitoring_list(self, msg):
+        
+        if msg.cucs_id not in self.__monitoring_cucs_list:
+            self.__monitoring_cucs_list.append(msg.cucs_id)
+            self.logger.debug("Cucs [{}] added to monitoring list.".format(msg.cucs_id))
+        else:
+            self.logger.debug("cucs_id already in monitoring list")
+
+        self.logger.debug("Monitoring list is: [{}]".format(self.__monitoring_cucs_list))
+
+    def remove_cucs_from_monitoring_list(self, msg):
+        
+        if msg.cucs_id in self.__monitoring_cucs_list:
+            self.__monitoring_cucs_list.remove(msg.cucs_id)
+            self.logger.debug("Cucs [{}] removed from monitoring list.".format(msg.cucs_id))
+        else:
+            self.logger.debug("cucs_id not present in monitoring list")
+
+        self.logger.debug("Monitoring list is: [{}]".format(self.__monitoring_cucs_list))
+
+    def handle_loi_request(self, wrapper, msg):
+        self.logger.debug("Processing LOI request")
+        
+        if msg.controlled_station_mode == 0x01:
+            """asking for something"""
+
+            if self.is_monitor_bit_set(msg):
+                """this is a request for monitor"""
+                self.add_cucs_to_monitoring_list(msg)
+
+            if self.is_control_bit_set(msg):
+                if self.__controlling_cucs_id == 0:
+                    self.__controlling_cucs_id = msg.cucs_id
+                    self.logger.debug("Control granted to [{}]".format(msg.cucs_id))
+                else:
+                    self.logger.debug("Cannot grant control to [{}] as already controlled by [{}]".format(msg.cucs_id, self.__controlling_cucs_id))
+                
+        else:
+            """letting go of something"""
+
+            if self.is_monitor_bit_set(msg):
+                """this is a request about monitor"""
+                self.remove_cucs_from_monitoring_list(msg)
+
+            if self.is_control_bit_set(msg):
+                if self.__controlling_cucs_id == msg.cucs_id:
+                    self.__controlling_cucs_id = 0
+                    self.logger.debug("Control revoked from [{}]".format(msg.cucs_id))
+                elif self.__controlling_cucs_id != 0:
+                    self.logger.debug("Cannot remove control from [{}] as being controlled by [{}]".format(msg.cucs_id, self.__controlling_cucs_id))
+
+        self.respond_21(wrapper, msg)
+

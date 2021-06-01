@@ -71,5 +71,6 @@ class StanagServer:
             if True == v.handle_message(wrapper, msg):
                 return
 
-        # we got a message that was not understood....
-        self.logger.warn('Message [{}] not understood'.format(wrapper.message_type))
+        if wrapper.message_type != 0x01:
+            # got a message that was not understood....
+            self.logger.warn('Message [{}] not understood'.format(wrapper.message_type))
