@@ -40,3 +40,29 @@ async def main():
 
 asyncio.run(main())
 ```
+
+The above example code will produce an output as follows in case a control LOI request is received by the VSM
+```shell
+2021-06-01 20:14:32,372 - main - DEBUG - Creating server
+2021-06-01 20:14:32,373 - main - INFO - Listening, press Ctrl+C to terminate
+2021-06-01 20:14:48,086 - StanagProtocol - DEBUG - Got packet of len [65]
+2021-06-01 20:14:48,086 - StanagProtocol - DEBUG - Got message [1]
+2021-06-01 20:14:48,086 - StanagProtocol - DEBUG - callback scheduled
+2021-06-01 20:14:48,086 - StanagServer - DEBUG - Got message [1]
+2021-06-01 20:14:48,086 - ControllableEntity[0] - DEBUG - Got message [1]
+2021-06-01 20:14:48,086 - ControllableEntity[0] - DEBUG - Message is auth request.
+2021-06-01 20:14:48,086 - ControllableEntity[0] - DEBUG - Message is of type LOI request
+2021-06-01 20:14:48,086 - ControllableEntity[0] - DEBUG - Processing LOI request
+2021-06-01 20:14:48,086 - ControllableEntity[0] - DEBUG - Control granted to [160]
+2021-06-01 20:14:48,086 - ControllableEntity[0] - DEBUG - Responding with Message 21
+2021-06-01 20:14:48,102 - StanagProtocol - DEBUG - Got packet of len [65]
+2021-06-01 20:14:48,102 - StanagProtocol - DEBUG - Got message [1]
+2021-06-01 20:14:48,102 - StanagProtocol - DEBUG - callback scheduled
+2021-06-01 20:14:48,102 - StanagServer - DEBUG - Got message [1]
+2021-06-01 20:14:48,102 - ControllableEntity[0] - DEBUG - Got message [1]
+2021-06-01 20:14:48,102 - ControllableEntity[0] - DEBUG - Message is auth request.
+2021-06-01 20:14:48,102 - ControllableEntity[0] - DEBUG - Message is of type LOI request
+2021-06-01 20:14:48,102 - ControllableEntity[0] - DEBUG - Processing LOI request
+2021-06-01 20:14:48,102 - ControllableEntity[0] - DEBUG - Control revoked from [160]
+2021-06-01 20:14:48,102 - ControllableEntity[0] - DEBUG - Responding with Message 21
+```
