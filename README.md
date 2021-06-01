@@ -1,3 +1,9 @@
+## Tested with python 3.8x
+
+Published branch | Development branch
+--- | ---
+![build status main branch](https://travis-ci.com/faisalthaheem/python-stanag-4586-vsm.svg?branch=main) | ![build status development branch](https://travis-ci.com/faisalthaheem/python-stanag-4586-vsm.svg?branch=development)
+
 # About
 Minimal implementation of a STANAG 4586 Vehicle Specific Module (VSM) which uses a lower level library [python-stanag-4586-EDA-v1](https://github.com/faisalthaheem/python-stanag-4586-EDA-v1) to exchange STANAG messages with a remote CUCS.
 
