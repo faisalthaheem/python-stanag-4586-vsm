@@ -17,6 +17,7 @@ class ControllableEntity:
     __loop = None
     __available_stations = 0x00
     __payload_type = 0x00
+    __callback_unhandled_messages = None
 
     def __init__(self, loop, debug_level, station_id, vsm_id, vehicle_id, callback_tx_data):
         self.__loop = loop
@@ -30,17 +31,32 @@ class ControllableEntity:
 
     # returns true if the message is handled
     def handle_message(self, wrapper, msg):
-        self.logger.debug("Got message [{}]".format(wrapper.message_type))
+        self.logger.debug("Got message [{:x}]".format(wrapper.message_type))
 
         if wrapper.message_type == 0x01:
             self.logger.debug("Message is auth request.")
             return self.handle_auth_message(wrapper, msg)
 
-        return self.process_incoming_message(wrapper. msg)
+        #check if this station is the one intended for this message
+        if msg.station_number == self.__station_id:
+            self.process_incoming_message(wrapper, msg)
+            return True
 
-    def process_incoming_message(self, wrapper, msg):
-        """child should provide implementation"""
         return False
+
+    #for any messages we cannot process in this class
+    def set_callback_for_unhandled_messages(self, callback):
+        if callback is not None:
+            self.__callback_unhandled_messages = callback
+
+    #invokes the __callback_unhandled_messages if it's not None 
+    def process_incoming_message(self, wrapper, msg):
+        if self.__callback_unhandled_messages is not None:
+            try:
+                self.__loop.call_soon(self.__callback_unhandled_messages, wrapper, msg)
+            except:
+                self.logger.error("Unhandled error: [{}]".format(sys.exc_info()[0]))
+
 
     def handle_auth_message(self, wrapper, msg):
     

@@ -17,10 +17,16 @@ class StanagServer:
 
     async def setup_service(self, loop, port_rx = 4586, port_tx = 4587, addr_rx = "224.10.10.10", addr_tx = "224.10.10.10"):
 
+        self.logger.info("Server setup Started.")
+
+        self.logger.info("Creating entities.")
         self.create_entities(loop)
+
+        self.logger.info("Setting up network i/o.")
         await self.create_rx_socket(loop, port_rx, addr_rx)
         await self.create_tx_socket(loop, port_tx, addr_tx)
 
+        self.logger.info("Server setup completed.")
 
     def on_rx_con_lost(self):
         pass
@@ -65,7 +71,7 @@ class StanagServer:
 
     def on_msg_rx(self, wrapper, msg):
         """Callback passed to stanag protocal and is invoked when a known message arrives."""
-        self.logger.debug("Got message [{}]".format(wrapper.message_type))
+        self.logger.debug("Got message [{:x}]".format(wrapper.message_type))
 
         for k,v in self.__controllable_entities.items():
             if True == v.handle_message(wrapper, msg):
@@ -73,4 +79,8 @@ class StanagServer:
 
         if wrapper.message_type != 0x01:
             # got a message that was not understood....
-            self.logger.warn('Message [{}] not understood'.format(wrapper.message_type))
+            self.logger.warn('Message [{:x}] not understood'.format(wrapper.message_type))
+
+    def get_entity(self, entity_name):
+        if entity_name in self.__controllable_entities.keys():
+            return self.__controllable_entities[entity_name]
