@@ -31,7 +31,7 @@ class ControllableEntity:
 
     # returns true if the message is handled
     def handle_message(self, wrapper, msg):
-        self.logger.debug("Got message [{:x}]".format(wrapper.message_type))
+        self.logger.debug("Got message [{}]".format(wrapper.message_type))
 
         if wrapper.message_type == 0x01:
             self.logger.debug("Message is auth request.")
@@ -104,7 +104,7 @@ class ControllableEntity:
         msg20.configuration_checksum = 0xABCD
 
         wrapped_reply = MessageWrapper(MESSAGE_WRAPPER_NULL)
-        wrapped_reply = wrapped_reply.wrap_message(wrapper.msg_instance_id, 0x20, msg20, False)
+        wrapped_reply = wrapped_reply.wrap_message(wrapper.msg_instance_id, 20, msg20, False)
 
         self.__loop.call_soon(self.__callback_tx_data, wrapped_reply)
 
@@ -127,11 +127,15 @@ class ControllableEntity:
         msg21.vehicle_sub_type = 0x00 #todo get from config
 
         wrapped_reply = MessageWrapper(MESSAGE_WRAPPER_NULL)
-        wrapped_reply = wrapped_reply.wrap_message(wrapper.msg_instance_id, 0x21, msg21, False)
+        wrapped_reply = wrapped_reply.wrap_message(wrapper.msg_instance_id, 21, msg21, False)
 
         self.__loop.call_soon(self.__callback_tx_data, wrapped_reply)
 
     def respond_300(self, wrapper, msg):
+
+        """No 300 for BP"""
+        if self.__station_id == 0: return
+
         self.logger.debug("Responding with Message 300")
         
         msg300 = Message300(MSG300_NULL)
@@ -152,7 +156,7 @@ class ControllableEntity:
         msg300.number_of_payload_recording_devices = 0x00
 
         wrapped_reply = MessageWrapper(MESSAGE_WRAPPER_NULL)
-        wrapped_reply = wrapped_reply.wrap_message(wrapper.msg_instance_id, 0x300, msg300, False)
+        wrapped_reply = wrapped_reply.wrap_message(wrapper.msg_instance_id, 300, msg300, False)
 
         self.__loop.call_soon(self.__callback_tx_data, wrapped_reply)
 

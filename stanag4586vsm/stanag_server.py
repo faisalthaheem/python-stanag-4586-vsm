@@ -71,7 +71,7 @@ class StanagServer:
 
     def on_msg_rx(self, wrapper, msg):
         """Callback passed to stanag protocal and is invoked when a known message arrives."""
-        self.logger.debug("Got message [{:x}]".format(wrapper.message_type))
+        self.logger.debug("Got message [{}]".format(wrapper.message_type))
 
         for k,v in self.__controllable_entities.items():
             if True == v.handle_message(wrapper, msg):
@@ -79,7 +79,7 @@ class StanagServer:
 
         if wrapper.message_type != 0x01:
             # got a message that was not understood....
-            self.logger.warn('Message [{:x}] not understood'.format(wrapper.message_type))
+            self.logger.warn('Message [{}] not understood'.format(wrapper.message_type))
 
     def get_entity(self, entity_name):
         if entity_name in self.__controllable_entities.keys():
