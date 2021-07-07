@@ -3,6 +3,7 @@ from stanag4586edav1.message_wrapper import *
 from stanag4586edav1.message01 import *
 from stanag4586edav1.message200 import *
 from stanag4586edav1.message1200 import *
+from stanag4586edav1.message20000 import *
 
 class StanagProtocol:
 
@@ -38,21 +39,25 @@ class StanagProtocol:
         self.logger.debug("Got packet of len [{}]".format(len(data)))
 
         wrapper = MessageWrapper(data)
-        self.logger.debug("Got message [{:x}]".format(wrapper.message_type))
+        self.logger.debug("Got message [{:}]".format(wrapper.message_type))
 
         knownMessage = False
         msg = None
 
-        if wrapper.message_type == 0x01:
+        if wrapper.message_type == 1:
             msg = Message01(data[MESSAGE_WRAPPER_LEN:])
             knownMessage = True
 
-        elif wrapper.message_type == 0x200:
+        elif wrapper.message_type == 200:
             msg = Message200(data[MESSAGE_WRAPPER_LEN:])
             knownMessage = True
 
-        elif wrapper.message_type == 0x1200:
+        elif wrapper.message_type == 1200:
             msg = Message1200(data[MESSAGE_WRAPPER_LEN:])
+            knownMessage = True
+
+        elif wrapper.message_type == 20000:
+            msg = Message20000(data[MESSAGE_WRAPPER_LEN:])
             knownMessage = True
 
         if knownMessage:
