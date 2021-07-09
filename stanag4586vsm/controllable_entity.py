@@ -33,16 +33,19 @@ class ControllableEntity:
     def handle_message(self, wrapper, msg):
         self.logger.debug("Got message [{}]".format(wrapper.message_type))
 
-        if wrapper.message_type == 0x01:
+        if wrapper.message_type == 1:
             self.logger.debug("Message is auth request.")
             return self.handle_auth_message(wrapper, msg)
 
-        #check if this station is the one intended for this message
-        if msg.station_number == self.__station_id:
-            self.process_incoming_message(wrapper, msg)
-            return True
+        # filter out unnecessary invocations of outer message handler below by ensuring this entity is the intended recepient
+        # of the message
+        if msg.has_station_number_field and (msg.station_number != self.__station_id):
+            return False
+        
+        # for messages that do not have station_number we have no choice but to invoke handler
+        self.process_incoming_message(wrapper, msg)
 
-        return False
+        return True
 
     #for any messages we cannot process in this class
     def set_callback_for_unhandled_messages(self, callback):
@@ -53,16 +56,16 @@ class ControllableEntity:
     def process_incoming_message(self, wrapper, msg):
         if self.__callback_unhandled_messages is not None:
             try:
+                self.logger.debug("Inovking unhandled message handler [{}]".format(wrapper.message_type))
                 self.__loop.call_soon(self.__callback_unhandled_messages, wrapper, msg)
             except:
                 self.logger.error("Unhandled error: [{}]".format(sys.exc_info()[0]))
 
-
     def handle_auth_message(self, wrapper, msg):
     
-        if  (msg.vehicle_id & MSG_01_BROADCAST_ID) == MSG_01_BROADCAST_ID and \
-            (msg.vsm_id & MSG_01_BROADCAST_ID) == MSG_01_BROADCAST_ID and \
-            (msg.controlled_station & MSG_01_BROADCAST_ID) == MSG_01_BROADCAST_ID:
+        if  (msg.vehicle_id & Message01.BROADCAST_ID) == Message01.BROADCAST_ID and \
+            (msg.vsm_id & Message01.BROADCAST_ID) == Message01.BROADCAST_ID and \
+            (msg.controlled_station & Message01.BROADCAST_ID) == Message01.BROADCAST_ID:
             self.logger.debug("Message is of type discovery")
             self.handle_broadcast(wrapper, msg)
             return False # to let the chain continue to be called at caller end
@@ -88,7 +91,7 @@ class ControllableEntity:
     def respond_20(self, wrapper, msg):
         self.logger.debug("Responding with Message 20")
 
-        msg20 = Message20(MSG20_NULL)
+        msg20 = Message20(Message20.MSGNULL)
 
         msg20.time_stamp = 0x00
         msg20.vehicle_id = self.__vehicle_id
@@ -98,12 +101,12 @@ class ControllableEntity:
         msg20.vehicle_type = 0x00 #todo be filled from some config in future
         msg20.vehicle_sub_type = 00 #todo be filled from some config in future
         msg20.owning_id = 0x00 #todo be filled from some config in future
-        msg20.tail_number = b"\x31\x32\x33\x34" #todo be filled from some config in future
-        msg20.mission_id = b"\x31\x32\x33\x34" #todo be filled from ongoing mission
-        msg20.atc_call_sign = b"\x31\x32\x33\x34" #todo be filled from some config in future
+        msg20.set_tail_number("1234") #todo be filled from some config in future
+        msg20.set_mission_id("1234") #todo be filled from some config mission
+        msg20.set_atc_call_sign("1234") #todo be filled from some config in future
         msg20.configuration_checksum = 0xABCD
 
-        wrapped_reply = MessageWrapper(MESSAGE_WRAPPER_NULL)
+        wrapped_reply = MessageWrapper(MessageWrapper.MSGNULL)
         wrapped_reply = wrapped_reply.wrap_message(wrapper.msg_instance_id, 20, msg20, False)
 
         self.__loop.call_soon(self.__callback_tx_data, wrapped_reply)
@@ -112,7 +115,7 @@ class ControllableEntity:
     def respond_21(self, wrapper, msg):
         self.logger.debug("Responding with Message 21")
         
-        msg21 = Message21(MSG21_NULL)
+        msg21 = Message21(Message21.MSGNULL)
 
         msg21.time_stamp = 0x00
         msg21.vehicle_id = self.__vehicle_id
@@ -122,11 +125,11 @@ class ControllableEntity:
         msg21.loi_authorized = self.get_loi_authorized(msg.cucs_id)
         msg21.loi_granted = self.get_loi_granted(msg.cucs_id)
         msg21.controlled_station = self.__station_id
-        msg21.controlled_station_mode = 1 if ( (msg21.loi_granted & LOI_05) == LOI_05) else 0
+        msg21.controlled_station_mode = 1 if ( (msg21.loi_granted & Message01.LOI_05) == Message01.LOI_05) else 0
         msg21.vehicle_type = 0x00 #todo get from config
         msg21.vehicle_sub_type = 0x00 #todo get from config
 
-        wrapped_reply = MessageWrapper(MESSAGE_WRAPPER_NULL)
+        wrapped_reply = MessageWrapper(MessageWrapper.MSGNULL)
         wrapped_reply = wrapped_reply.wrap_message(wrapper.msg_instance_id, 21, msg21, False)
 
         self.__loop.call_soon(self.__callback_tx_data, wrapped_reply)
@@ -138,7 +141,7 @@ class ControllableEntity:
 
         self.logger.debug("Responding with Message 300")
         
-        msg300 = Message300(MSG300_NULL)
+        msg300 = Message300(Message300.MSGNULL)
         msg300.time_stamp = 0x00
         msg300.vehicle_id = self.__vehicle_id
         msg300.cucs_id = msg.cucs_id
@@ -147,7 +150,7 @@ class ControllableEntity:
 
         if self.__station_id == 0x0:
             msg300.payload_stations_available = self.__available_stations
-            msg300.payload_type = STATION_TYPE_UNSPECIFIED
+            msg300.payload_type = Message300.STATION_TYPE_UNSPECIFIED
         else:
             msg300.payload_stations_available = 0x00
             msg300.payload_type = self.__payload_type
@@ -155,7 +158,7 @@ class ControllableEntity:
         msg300.station_door = 0x00
         msg300.number_of_payload_recording_devices = 0x00
 
-        wrapped_reply = MessageWrapper(MESSAGE_WRAPPER_NULL)
+        wrapped_reply = MessageWrapper(MessageWrapper.MSGNULL)
         wrapped_reply = wrapped_reply.wrap_message(wrapper.msg_instance_id, 300, msg300, False)
 
         self.__loop.call_soon(self.__callback_tx_data, wrapped_reply)
@@ -166,11 +169,11 @@ class ControllableEntity:
         granted_loi = 0
         
         if self.__controlling_cucs_id == requesting_cucs_id:
-            granted_loi = LOI_05
+            granted_loi = Message01.LOI_05
         
         if requesting_cucs_id in self.__monitoring_cucs_list:
             """This is a repeat in case the previous statment is true since there is no control without monitoring"""
-            granted_loi = (granted_loi or LOI_02)
+            granted_loi = (granted_loi or Message01.LOI_02)
 
         return granted_loi
 
@@ -178,10 +181,10 @@ class ControllableEntity:
         """Calculates and returns the loi_authorized field value given a cucs_id"""
         
         """By default everyone can monitor"""
-        authorized_loi = LOI_02
+        authorized_loi = Message01.LOI_02
 
         if self.__controlling_cucs_id in [0, requesting_cucs_id]:
-            authorized_loi = (authorized_loi or LOI_05)
+            authorized_loi = (authorized_loi or Message01.LOI_05)
         
         return authorized_loi
 
@@ -193,13 +196,13 @@ class ControllableEntity:
 
     def is_control_bit_set(self, msg):
 
-        CONTROL_LOI_BIT = LOI_03 if self.__station_id != 0 else LOI_05
+        CONTROL_LOI_BIT = Message01.LOI_03 if self.__station_id != 0 else Message01.LOI_05
         
         return (msg.requested_handover_loi & CONTROL_LOI_BIT) == CONTROL_LOI_BIT
 
     def is_monitor_bit_set(self, msg):
 
-        return (msg.requested_handover_loi & LOI_02) == LOI_02
+        return (msg.requested_handover_loi & Message01.LOI_02) == Message01.LOI_02
 
     def add_cucs_to_monitoring_list(self, msg):
         
