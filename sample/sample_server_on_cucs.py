@@ -28,10 +28,11 @@ async def main():
     #         functools.partial(ask_exit, signame, loop))
 
     logger.debug("Creating server")
-    await server.setup_service(loop)
+    await server.setup_service(loop, StanagServer.MODE_CUCS)
+
 
     #set our callback to start getting requests unprocessed by default implementation
-    server.get_entity("eo").set_callback_for_unhandled_messages(handle_message)
+    # server.get_entity("eo").set_callback_for_unhandled_messages(handle_message)
 
     logger.info("Listening, press Ctrl+C to terminate")
     await asyncio.sleep(3600*100)
