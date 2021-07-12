@@ -19,6 +19,9 @@ class EntityController:
     KEY_MONITORED = 3
     KEY_TYPE = 4
     KEY_SUB_TYPE = 5
+    KEY_TAIL_NUMBER = 6
+    KEY_MISSION_ID = 7
+    KEY_CALL_SIGN = 8
 
     __vsm_id = 0x0
     __loop = None
@@ -87,7 +90,10 @@ class EntityController:
             return
 
         vehicle_ref = self.__vehicles[msg.vehicle_id]
-        vehicle_ref[self.KEY_META] = Message20(msg.encode())
+        vehicle_ref[self.KEY_META] = {}
+        vehicle_ref[self.KEY_META][self.KEY_CALL_SIGN] = msg.get_atc_call_sign()
+        vehicle_ref[self.KEY_META][self.KEY_MISSION_ID] = msg.get_mission_id()
+        vehicle_ref[self.KEY_META][self.KEY_TAIL_NUMBER] = msg.get_tail_number()
 
     def handle_message_300(self, wrapper, msg):
 
