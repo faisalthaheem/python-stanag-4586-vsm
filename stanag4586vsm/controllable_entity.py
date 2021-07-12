@@ -1,6 +1,6 @@
 from enum import auto
 import logging
-import pprint
+import sys
 from stanag4586edav1.message_wrapper import *
 from stanag4586edav1.message01 import *
 from stanag4586edav1.message20 import *
@@ -29,8 +29,8 @@ class ControllableEntity:
         self.logger = logging.getLogger('ControllableEntity[{}]'.format(self.__station_id))
         self.logger.setLevel(debug_level)
 
-    # returns true if the message is handled
     def handle_message(self, wrapper, msg):
+        """returns true if the message is handled"""
         self.logger.debug("Got message [{}]".format(wrapper.message_type))
 
         if wrapper.message_type == 1:
@@ -47,13 +47,12 @@ class ControllableEntity:
 
         return True
 
-    #for any messages we cannot process in this class
     def set_callback_for_unhandled_messages(self, callback):
-        if callback is not None:
-            self.__callback_unhandled_messages = callback
+        """for any messages we cannot process in this class"""
+        self.__callback_unhandled_messages = callback
 
-    #invokes the __callback_unhandled_messages if it's not None 
     def process_incoming_message(self, wrapper, msg):
+        """invokes the __callback_unhandled_messages if it's not None"""
         if self.__callback_unhandled_messages is not None:
             try:
                 self.logger.debug("Inovking unhandled message handler [{}]".format(wrapper.message_type))

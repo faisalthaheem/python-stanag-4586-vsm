@@ -4,6 +4,7 @@ import struct
 from types import coroutine
 from .stanag_protocol import StanagProtocol
 from .controllable_entity import ControllableEntity
+from .entity_controller import EntityController
 import logging
 from stanag4586edav1.message300 import *
 from stanag4586edav1.message_wrapper import *
@@ -17,10 +18,16 @@ class StanagServer:
     MODE_VEHICLE = 0
     MODE_CUCS = 1
 
+
+    """Config parameters, to be read from config"""
+    __CUCS_ID = 0xFAFAFAFA
+    __VSM_ID = 0
+
     """Holds reference to the current asyncio loop this class was created on"""
     __loop = None
     
     __controllable_entities = {}
+    __entities_controller = None
     __mode = MODE_VEHICLE
 
     """Encapsulates a task that sends out periodic discover 01 messages on network"""
@@ -97,6 +104,7 @@ class StanagServer:
             self.__transport_tx.sendto(data)
 
     def create_cucs_tasks(self):
+        self.__entities_controller = EntityController(self.__loop, self.debug_level, self.__CUCS_ID, self.__VSM_ID, self.tx_data)
         self.__task_discover = self.__loop.create_task(self.task_discover())
 
         
@@ -129,7 +137,7 @@ class StanagServer:
 
         elif self.__mode is self.MODE_CUCS:
             """If running on the cucs side"""
-            pass
+            self.__entities_controller.handle_message(wrapper, msg)
 
 
     @coroutine
@@ -139,7 +147,7 @@ class StanagServer:
             """Send Msg 01 to discover vehicles on the network"""
 
             msg01 = Message01(Message01.MSGNULL)
-            msg01.make_discovery_message(0xFAFAFAFA)
+            msg01.make_discovery_message(self.__CUCS_ID)
             
             wrapper = MessageWrapper(MessageWrapper.MSGNULL)
             wrapped_msg = wrapper.wrap_message(1, 0x01, msg01, False)
