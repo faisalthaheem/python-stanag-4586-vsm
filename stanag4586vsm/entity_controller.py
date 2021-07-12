@@ -26,6 +26,7 @@ class EntityController:
     __vsm_id = 0x0
     __loop = None
     __callback_unhandled_messages = None
+    __callback_vehicle_discovery = None
 
     # __vehicles contains the list of discovered platfomrs on the network, the format
     # of this structure is as follows
@@ -56,33 +57,64 @@ class EntityController:
         self.logger = logging.getLogger('EntityController')
         self.logger.setLevel(debug_level)
 
+
+    def get_discovered_vehicles(self):
+        """Getter that returns a copy of __vehicles field"""
+        return copy.copy(self.__vehicles)
+
     def set_callback_for_unhandled_messages(self, callback):
         """for any messages we cannot process in this class"""
         self.__callback_unhandled_messages = callback
 
-    def process_incoming_message(self, wrapper, msg):
-        """invokes the __callback_unhandled_messages if it's not None"""
+    def __invoke_handler_unhandled_msgs(self, wrapper, msg):
+        """invokes the handler if it's not None"""
+
         if self.__callback_unhandled_messages is not None:
             try:
-                self.logger.debug("Inovking unhandled message handler [{}]".format(wrapper.message_type))
+                self.logger.debug("Inovking handler for msg [{}]".format(wrapper.message_type))
                 self.__loop.call_soon(self.__callback_unhandled_messages, wrapper, msg)
             except:
                 self.logger.error("Unhandled error: [{}]".format(sys.exc_info()[0]))
+
+    def set_callback_for_vehicle_discovery(self, callback):
+        """invoked after a vehicle discovery or change in LOI"""
+        self.__callback_vehicle_discovery = callback
+
+    def __invoke_handler_vehicle_discovery(self):
+        """invokes the handler if it's not None"""
+
+        if self.__callback_vehicle_discovery is not None:
+            try:
+                self.logger.debug("Inovking handler for vehicle discovery")
+                self.__loop.call_soon(self.__callback_vehicle_discovery, self, copy.copy(self.__vehicles))
+            except:
+                self.logger.error("Unhandled error: [{}]".format(sys.exc_info()[0]))
+
 
     def handle_message(self, wrapper, msg):
         """examines incoming message and acts accordingly"""
         self.logger.debug("Got message [{}]".format(wrapper.message_type))
 
+        handled = False
+
         if wrapper.message_type == 21:
             self.handle_message_21(wrapper, msg)
-            self.logger.debug(self.__vehicles)
+            handled = True
+
+        elif wrapper.message_type == 20:
+            self.handle_message_20(wrapper, msg)
+            handled = True
 
         elif wrapper.message_type == 300:
             self.handle_message_300(wrapper, msg)
-    
-        elif wrapper.message_type == 20:
-            self.handle_message_20(wrapper, msg)
-
+            handled = True
+        
+        if handled:
+            self.logger.debug(self.__vehicles)
+            #raise event for ugv discovery
+            self.__invoke_handler_vehicle_discovery()
+        else:
+            self.__invoke_handler_unhandled_msgs(wrapper, msg)
 
     def handle_message_20(self, wrapper, msg):
 

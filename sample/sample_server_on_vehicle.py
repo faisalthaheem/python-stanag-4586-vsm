@@ -10,7 +10,7 @@ from stanag4586edav1.message20020 import *
 FORMAT = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 logging.basicConfig(format=FORMAT)
 
-logger = logging.getLogger("userland")
+logger = logging.getLogger("vehicle")
 logger.setLevel(logging.DEBUG)
 
 loop = None

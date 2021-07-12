@@ -121,6 +121,9 @@ class StanagServer:
         if entity_name in self.__controllable_entities.keys():
             return self.__controllable_entities[entity_name]
                 
+    def get_entity_controller(self):
+        return self.__entities_controller
+        
     def on_msg_rx(self, wrapper, msg):
         """Callback passed to stanag protocal and is invoked when a known message arrives."""
         self.logger.debug("Got message [{}]".format(wrapper.message_type))
