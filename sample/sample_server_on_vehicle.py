@@ -1,16 +1,18 @@
 import asyncio
 import logging
 import json
+from stanag4586edav1.message20 import Message20
 
 from stanag4586vsm.stanag_server import *
 from stanag4586edav1.message_wrapper import *
 from stanag4586edav1.message20020 import *
+from stanag4586edav1.message21 import *
 
 
 FORMAT = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 logging.basicConfig(format=FORMAT)
 
-logger = logging.getLogger("userland")
+logger = logging.getLogger("vehicle")
 logger.setLevel(logging.DEBUG)
 
 loop = None
@@ -53,7 +55,7 @@ async def main():
     #         functools.partial(ask_exit, signame, loop))
 
     logger.debug("Creating server")
-    await server.setup_service(loop, StanagServer.MODE_VEHICLE)
+    await server.setup_service(loop, StanagServer.MODE_VEHICLE, Message21.VEHICLE_TYPE_UGV, Message21.UGV_SUB_TYPE_SURV)
 
     #set our callback to start getting requests unprocessed by default implementation
     server.get_entity("eo").set_callback_for_unhandled_messages(process_eo_messages)

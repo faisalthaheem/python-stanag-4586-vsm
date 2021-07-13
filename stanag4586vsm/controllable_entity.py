@@ -1,6 +1,6 @@
 from enum import auto
 import logging
-import pprint
+import sys
 from stanag4586edav1.message_wrapper import *
 from stanag4586edav1.message01 import *
 from stanag4586edav1.message20 import *
@@ -12,6 +12,8 @@ class ControllableEntity:
     __station_id = 0x0 #by default we are the base platform
     __vsm_id = 0x0
     __vehicle_id = 0x0
+    __vehicle_type = 0x0
+    __vehicle_sub_type = 0x0
     __monitoring_cucs_list = []
     __controlling_cucs_id = 0x0
     __loop = None
@@ -19,18 +21,20 @@ class ControllableEntity:
     __payload_type = 0x00
     __callback_unhandled_messages = None
 
-    def __init__(self, loop, debug_level, station_id, vsm_id, vehicle_id, callback_tx_data):
+    def __init__(self, loop, debug_level, station_id, vsm_id, vehicle_id, vehicle_type, vehicle_sub_type, callback_tx_data):
         self.__loop = loop
         self.__station_id = station_id
         self.__vsm_id = vsm_id
         self.__vehicle_id = vehicle_id
+        self.__vehicle_type = vehicle_type
+        self.__vehicle_sub_type = vehicle_sub_type
         self.__callback_tx_data = callback_tx_data
 
         self.logger = logging.getLogger('ControllableEntity[{}]'.format(self.__station_id))
         self.logger.setLevel(debug_level)
 
-    # returns true if the message is handled
     def handle_message(self, wrapper, msg):
+        """returns true if the message is handled"""
         self.logger.debug("Got message [{}]".format(wrapper.message_type))
 
         if wrapper.message_type == 1:
@@ -47,13 +51,12 @@ class ControllableEntity:
 
         return True
 
-    #for any messages we cannot process in this class
     def set_callback_for_unhandled_messages(self, callback):
-        if callback is not None:
-            self.__callback_unhandled_messages = callback
+        """for any messages we cannot process in this class"""
+        self.__callback_unhandled_messages = callback
 
-    #invokes the __callback_unhandled_messages if it's not None 
     def process_incoming_message(self, wrapper, msg):
+        """invokes the __callback_unhandled_messages if it's not None"""
         if self.__callback_unhandled_messages is not None:
             try:
                 self.logger.debug("Inovking unhandled message handler [{}]".format(wrapper.message_type))
@@ -98,8 +101,8 @@ class ControllableEntity:
         msg20.cucs_id = msg.cucs_id
         msg20.vsm_id = self.__vsm_id
         msg20.vehicle_id_update = 0x0
-        msg20.vehicle_type = 0x00 #todo be filled from some config in future
-        msg20.vehicle_sub_type = 00 #todo be filled from some config in future
+        msg20.vehicle_type = self.__vehicle_type
+        msg20.vehicle_sub_type = self.__vehicle_sub_type
         msg20.owning_id = 0x00 #todo be filled from some config in future
         msg20.set_tail_number("1234") #todo be filled from some config in future
         msg20.set_mission_id("1234") #todo be filled from some config mission
@@ -126,8 +129,8 @@ class ControllableEntity:
         msg21.loi_granted = self.get_loi_granted(msg.cucs_id)
         msg21.controlled_station = self.__station_id
         msg21.controlled_station_mode = 1 if ( (msg21.loi_granted & Message01.LOI_05) == Message01.LOI_05) else 0
-        msg21.vehicle_type = 0x00 #todo get from config
-        msg21.vehicle_sub_type = 0x00 #todo get from config
+        msg21.vehicle_type = self.__vehicle_type
+        msg21.vehicle_sub_type = self.__vehicle_sub_type
 
         wrapped_reply = MessageWrapper(MessageWrapper.MSGNULL)
         wrapped_reply = wrapped_reply.wrap_message(wrapper.msg_instance_id, 21, msg21, False)

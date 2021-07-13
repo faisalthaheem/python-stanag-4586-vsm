@@ -7,7 +7,7 @@ from stanag4586vsm.stanag_server import *
 FORMAT = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 logging.basicConfig(format=FORMAT)
 
-logger = logging.getLogger("main")
+logger = logging.getLogger("cucs")
 logger.setLevel(logging.DEBUG)
 
 def ask_exit(signame, loop):
@@ -16,6 +16,19 @@ def ask_exit(signame, loop):
 
 def handle_message(wrapper, msg):
     logger.info("Got message [{:x}]".format(wrapper.message_type))
+
+discovered_vehicles = {}
+
+def handle_vehicle_discovery(controller, vehicles):
+    logger.info("Vehicles discovered [{}]".format(vehicles))
+
+    discovered_vehicles = vehicles
+
+    #for poc purposes we have just one vehicle
+    #we check if it's not already controlled by us, then we request for it to be controlled
+    for veh_id in discovered_vehicles.keys():
+        if discovered_vehicles[veh_id][EntityController.KEY_CONTROLLED] is False:
+            controller.control_request(0x0, veh_id)
 
 async def main():
 
@@ -28,10 +41,8 @@ async def main():
     #         functools.partial(ask_exit, signame, loop))
 
     logger.debug("Creating server")
-    await server.setup_service(loop)
-
-    #set our callback to start getting requests unprocessed by default implementation
-    server.get_entity("eo").set_callback_for_unhandled_messages(handle_message)
+    await server.setup_service(loop, StanagServer.MODE_CUCS)
+    server.get_entity_controller().set_callback_for_vehicle_discovery(handle_vehicle_discovery)
 
     logger.info("Listening, press Ctrl+C to terminate")
     await asyncio.sleep(3600*100)
