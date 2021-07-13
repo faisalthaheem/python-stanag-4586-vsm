@@ -21,7 +21,10 @@ class StanagServer:
 
     """Config parameters, to be read from config"""
     __CUCS_ID = 0xFAFAFAFA
+    __VEHICLE_ID = 0
     __VSM_ID = 0
+    __VEHICLE_TYPE = 0
+    __VEHICLE_SUB_TYPE = 0
 
     """Holds reference to the current asyncio loop this class was created on"""
     __loop = None
@@ -42,12 +45,15 @@ class StanagServer:
         if self.__task_discover is not None:
             self.__task_discover.cancel()
 
-    async def setup_service(self, loop, mode, port_rx = 4586, port_tx = 4587, addr_rx = "224.10.10.10", addr_tx = "224.10.10.10"):
+    async def setup_service(self, loop, mode, vehicle_type = 0, vehicle_sub_type = 0, 
+        port_rx = 4586, port_tx = 4587, addr_rx = "224.10.10.10", addr_tx = "224.10.10.10"):
 
         self.logger.info("Server setup Started.")
 
         self.__loop = loop
         self.__mode = mode
+        self.__VEHICLE_TYPE = vehicle_type
+        self.__VEHICLE_SUB_TYPE = vehicle_sub_type
 
         if mode is self.MODE_VEHICLE:
             self.logger.info("Creating entities.")
@@ -111,11 +117,22 @@ class StanagServer:
     def create_entities(self, loop):
         """Creates all the sensors and stations that can be controlled by CUCS. Returns nothing."""
         
-        self.__controllable_entities['base'] = ControllableEntity(loop, self.debug_level, 0x0, 0x1, 0x1, self.tx_data)
-        self.__controllable_entities['eo'] = ControllableEntity(loop, self.debug_level, 0x1, 0x1, 0x1, self.tx_data)
+        self.__controllable_entities['base'] = ControllableEntity(
+            loop, 
+            self.debug_level, 0x0, 
+            self.__VSM_ID, self.__VEHICLE_ID, 
+            self.__VEHICLE_TYPE, self.__VEHICLE_SUB_TYPE,
+            self.tx_data)
+            
+        self.__controllable_entities['eo'] = ControllableEntity(
+            loop, 
+            self.debug_level, 0x1, 
+            self.__VSM_ID, self.__VEHICLE_ID, 
+            self.__VEHICLE_TYPE, self.__VEHICLE_SUB_TYPE,
+            self.tx_data)
         
         self.__controllable_entities['base'].set_available_stations(0x01)
-        self.__controllable_entities['eo'].set_payload_type(Message300.STATION_TYPE_EO)
+        self.__controllable_entities['eo'].set_payload_type(Message300.PAYLOAD_TYPE_EOIR)
 
     def get_entity(self, entity_name):
         if entity_name in self.__controllable_entities.keys():
@@ -123,7 +140,7 @@ class StanagServer:
                 
     def get_entity_controller(self):
         return self.__entities_controller
-        
+
     def on_msg_rx(self, wrapper, msg):
         """Callback passed to stanag protocal and is invoked when a known message arrives."""
         self.logger.debug("Got message [{}]".format(wrapper.message_type))

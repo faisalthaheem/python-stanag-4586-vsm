@@ -23,6 +23,7 @@ class EntityController:
     KEY_MISSION_ID = 7
     KEY_CALL_SIGN = 8
 
+    __cucs_id = 0x0
     __vsm_id = 0x0
     __loop = None
     __callback_unhandled_messages = None
@@ -51,6 +52,7 @@ class EntityController:
 
     def __init__(self, loop, debug_level, cucs_id, vsm_id, callback_tx_data):
         self.__loop = loop
+        self.__cucs_id = cucs_id
         self.__vsm_id = vsm_id
         self.__callback_tx_data = callback_tx_data
 
@@ -183,5 +185,63 @@ class EntityController:
                     station_ref[self.KEY_CONTROLLED] = False
                     station_ref[self.KEY_MONITORED] = True if ( (msg.loi_granted & Message01.LOI_02) == Message01.LOI_02) else False
 
-                station_ref[self.KEY_TYPE] = msg.vehicle_type
-                station_ref[self.KEY_SUB_TYPE] = msg.vehicle_sub_type
+
+    def __tx_msg(self, msg_type, msg):
+
+        if self.__callback_tx_data is None:
+            self.logger.warn("self.__callback_tx_data is none, unable to tx data")
+            return
+
+        wrapper = MessageWrapper(MessageWrapper.MSGNULL)
+        wrapped_msg = wrapper.wrap_message(1, msg_type, msg, False)
+
+        self.__loop.call_soon(self.__callback_tx_data, wrapped_msg)
+
+    def __create_msg_01(self, station_id, vehicle_id):
+        
+        msg01 = Message01(Message01.MSGNULL)
+        msg01.time_stamp = 0x00
+        msg01.vehicle_id = vehicle_id
+        msg01.cucs_id = self.__cucs_id
+        msg01.vsm_id = self.__vsm_id
+        msg01.data_link_id = 0x00
+        msg01.vehicle_type = 0x00
+        msg01.vehicle_sub_type = 0x00
+        msg01.controlled_station = station_id
+        msg01.wait_for_vehicle_data_link_transition_coordination_message = 0x00
+
+        return msg01
+
+    def control_request(self, station_id, vehicle_id):
+        
+        msg01 = self.__create_msg_01(station_id, vehicle_id)
+        
+        msg01.requested_handover_loi = Message01.LOI_05
+        msg01.controlled_station_mode = 0x01
+
+        self.__tx_msg(1, msg01)
+
+    def control_release(self, station_id, vehicle_id):
+
+        msg01 = self.__create_msg_01(station_id, vehicle_id)
+        
+        msg01.requested_handover_loi = Message01.LOI_05
+        msg01.controlled_station_mode = 0x00
+
+        self.__tx_msg(1, msg01)
+
+    def monitor_request(self, station_id, vehicle_id):
+        msg01 = self.__create_msg_01(station_id, vehicle_id)
+        
+        msg01.requested_handover_loi = Message01.LOI_01
+        msg01.controlled_station_mode = 0x01
+
+        self.__tx_msg(1, msg01)
+
+    def monitor_release(self, station_id, vehicle_id):
+        msg01 = self.__create_msg_01(station_id, vehicle_id)
+        
+        msg01.requested_handover_loi = Message01.LOI_01
+        msg01.controlled_station_mode = 0x00
+
+        self.__tx_msg(1, msg01)

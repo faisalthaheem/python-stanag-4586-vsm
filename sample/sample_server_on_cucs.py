@@ -17,9 +17,18 @@ def ask_exit(signame, loop):
 def handle_message(wrapper, msg):
     logger.info("Got message [{:x}]".format(wrapper.message_type))
 
+discovered_vehicles = {}
 
 def handle_vehicle_discovery(controller, vehicles):
     logger.info("Vehicles discovered [{}]".format(vehicles))
+
+    discovered_vehicles = vehicles
+
+    #for poc purposes we have just one vehicle
+    #we check if it's not already controlled by us, then we request for it to be controlled
+    for veh_id in discovered_vehicles.keys():
+        if discovered_vehicles[veh_id][EntityController.KEY_CONTROLLED] is False:
+            controller.control_request(0x0, veh_id)
 
 async def main():
 
