@@ -97,21 +97,24 @@ class EntityController:
         """examines incoming message and acts accordingly"""
         self.logger.debug("Got message [{}]".format(wrapper.message_type))
 
-        handled = False
+        raise_discovery = False
 
         if wrapper.message_type == 21:
             self.handle_message_21(wrapper, msg)
-            handled = True
+            
+            # do not raise for paylaod stations
+            if msg.controlled_station == 0:
+                raise_discovery = True
 
         elif wrapper.message_type == 20:
             self.handle_message_20(wrapper, msg)
-            handled = True
+            #handled = True
 
         elif wrapper.message_type == 300:
             self.handle_message_300(wrapper, msg)
-            handled = True
+            #handled = True
         
-        if handled:
+        if raise_discovery:
             self.logger.debug(self.__vehicles)
             #raise event for ugv discovery
             self.__invoke_handler_vehicle_discovery()
