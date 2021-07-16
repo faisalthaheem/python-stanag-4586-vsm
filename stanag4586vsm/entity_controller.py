@@ -37,7 +37,11 @@ class EntityController:
     #       KEY_MONITORED : Boolean
     #       KEY_TYPE: int
     #       KEY_SUB_TYPE: int
-    #       KEY_META : {} message 20 contents
+    #       KEY_META : {
+    #           KEY_CALL_SIGN: string
+    #           KEY_MISSION_ID: string
+    #           KEY_TAIL_NUMBER: string 
+    #       } 
     #       KEY_STATIONS : {
     #           station_id: {
     #               KEY_CONTROLLED: Boolean
@@ -236,7 +240,7 @@ class EntityController:
     def monitor_request(self, station_id, vehicle_id):
         msg01 = self.__create_msg_01(station_id, vehicle_id)
         
-        msg01.requested_handover_loi = Message01.LOI_01
+        msg01.requested_handover_loi = Message01.LOI_02
         msg01.controlled_station_mode = 0x01
 
         self.__tx_msg(1, msg01)
@@ -244,7 +248,7 @@ class EntityController:
     def monitor_release(self, station_id, vehicle_id):
         msg01 = self.__create_msg_01(station_id, vehicle_id)
         
-        msg01.requested_handover_loi = Message01.LOI_01
+        msg01.requested_handover_loi = Message01.LOI_02
         msg01.controlled_station_mode = 0x00
 
         self.__tx_msg(1, msg01)
