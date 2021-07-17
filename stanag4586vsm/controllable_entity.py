@@ -37,15 +37,16 @@ class ControllableEntity:
         """returns true if the message is handled"""
         self.logger.debug("Got message [{}]".format(wrapper.message_type))
 
+        # filter out unnecessary invocations of outer message handler below by ensuring this entity is the intended recepient
+        # of the message
+        station_id = msg.getStationId()
+        if station_id != None and station_id != Message01.BROADCAST_ID and station_id != self.__station_id: 
+            return False
+        
         if wrapper.message_type == 1:
             self.logger.debug("Message is auth request.")
             return self.handle_auth_message(wrapper, msg)
 
-        # filter out unnecessary invocations of outer message handler below by ensuring this entity is the intended recepient
-        # of the message
-        station_id = msg.getStationId()
-        if station_id != None and station_id != self.__station_id: 
-            return False
         
         # for messages that do not have station_number we have no choice but to invoke handler
         self.process_incoming_message(wrapper, msg)
