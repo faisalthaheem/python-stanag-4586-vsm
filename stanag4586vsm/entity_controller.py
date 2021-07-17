@@ -223,7 +223,7 @@ class EntityController:
         
         msg01 = self.__create_msg_01(station_id, vehicle_id)
         
-        msg01.requested_handover_loi = Message01.LOI_05
+        msg01.requested_handover_loi = Message01.LOI_05 if station_id == 0 else Message01.LOI_03
         msg01.controlled_station_mode = 0x01
         
         self.__tx_msg(1, msg01)
@@ -232,7 +232,7 @@ class EntityController:
 
         msg01 = self.__create_msg_01(station_id, vehicle_id)
         
-        msg01.requested_handover_loi = Message01.LOI_05
+        msg01.requested_handover_loi = Message01.LOI_05 if station_id == 0 else Message01.LOI_03
         msg01.controlled_station_mode = 0x00
 
         self.__tx_msg(1, msg01)
