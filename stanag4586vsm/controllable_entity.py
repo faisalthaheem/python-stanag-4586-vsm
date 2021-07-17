@@ -43,7 +43,8 @@ class ControllableEntity:
 
         # filter out unnecessary invocations of outer message handler below by ensuring this entity is the intended recepient
         # of the message
-        if msg.has_station_number_field and (msg.station_number != self.__station_id):
+        station_id = msg.getStationId()
+        if station_id != None and station_id != self.__station_id: 
             return False
         
         # for messages that do not have station_number we have no choice but to invoke handler

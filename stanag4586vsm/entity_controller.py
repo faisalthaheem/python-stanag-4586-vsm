@@ -225,7 +225,7 @@ class EntityController:
         
         msg01.requested_handover_loi = Message01.LOI_05
         msg01.controlled_station_mode = 0x01
-
+        
         self.__tx_msg(1, msg01)
 
     def control_release(self, station_id, vehicle_id):
