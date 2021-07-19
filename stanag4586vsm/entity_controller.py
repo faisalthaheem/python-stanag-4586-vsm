@@ -8,6 +8,7 @@ from stanag4586edav1.message01 import *
 from stanag4586edav1.message20 import *
 from stanag4586edav1.message21 import *
 from stanag4586edav1.message300 import *
+from stanag4586edav1.message20010 import *
 
 
 class EntityController:
@@ -252,3 +253,14 @@ class EntityController:
         msg01.controlled_station_mode = 0x00
 
         self.__tx_msg(1, msg01)
+
+    def query_request(self, vehicle_id, station_id, query_type = Message20010.QUERY_TYPE_SEND_CONFIG):
+        
+        msg20010 = Message20010(Message20010.MSGNULL)
+        msg20010.time_stamp = 0x00
+        msg20010.vehicle_id = vehicle_id
+        msg20010.cucs_id = self.__cucs_id
+        msg20010.station_number = station_id
+        msg20010.query_type = query_type
+
+        self.__tx_msg(20010, msg20010)
