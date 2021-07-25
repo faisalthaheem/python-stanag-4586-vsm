@@ -34,7 +34,7 @@ def process_eo_messages(wrapper, msg):
         msg20020.cucs_id = msg.cucs_id
         msg20020.station_number = msg.station_number
         msg20020.requested_query_type = msg.query_type
-        msg20020.set_response(json.dumps({"daylight":"rtsp://127.0.0.1:8554/live"}))
+        msg20020.set_response(json.dumps({"daylight":"rtsp://wowzaec2demo.streamlock.net/vod/mp4:BigBuckBunny_115k.mov"}))
 
         wrapped_reply = MessageWrapper(MessageWrapper.MSGNULL)
         wrapped_reply = wrapped_reply.wrap_message(wrapper.msg_instance_id, 20020, msg20020, False)
