@@ -23,6 +23,8 @@ class EntityController:
     KEY_TAIL_NUMBER = 6
     KEY_MISSION_ID = 7
     KEY_CALL_SIGN = 8
+    #whether if the station can be controlled by this cucs
+    KEY_CONTROLLABLE = 9
 
     __cucs_id = 0x0
     __vsm_id = 0x0
@@ -36,6 +38,7 @@ class EntityController:
     #   vehicle_id : {
     #       KEY_CONTROLLED: Boolean
     #       KEY_MONITORED : Boolean
+    #       KEY_CONTROLLABLE: Boolean
     #       KEY_TYPE: int
     #       KEY_SUB_TYPE: int
     #       KEY_META : {
@@ -162,6 +165,7 @@ class EntityController:
             self.__vehicles[msg.vehicle_id] = {
                 self.KEY_CONTROLLED: False,
                 self.KEY_MONITORED: False,
+                self.KEY_CONTROLLABLE: False,
                 self.KEY_META: None,
                 self.KEY_STATIONS: {}
             }
@@ -171,9 +175,11 @@ class EntityController:
         if msg.controlled_station == 0:          
             
             if msg.controlled_station_mode == Message21.CONTROLLED_STATION_MODE_IN_CONTROL:
+                vehicle_ref[self.KEY_CONTROLLABLE] = True
                 vehicle_ref[self.KEY_CONTROLLED] = True
                 vehicle_ref[self.KEY_MONITORED] = True
             else:
+                vehicle_ref[self.KEY_CONTROLLABLE] = True if ( (msg.loi_authorized & Message01.LOI_05) == Message01.LOI_05) else False
                 vehicle_ref[self.KEY_CONTROLLED] = False
                 vehicle_ref[self.KEY_MONITORED] = True if ( (msg.loi_granted & Message01.LOI_02) == Message01.LOI_02) else False
 
@@ -187,9 +193,11 @@ class EntityController:
                 station_ref = vehicle_ref[self.KEY_STATIONS][msg.controlled_station]
 
                 if msg.controlled_station_mode == Message21.CONTROLLED_STATION_MODE_IN_CONTROL:
+                    station_ref[self.KEY_CONTROLLABLE] = True
                     station_ref[self.KEY_CONTROLLED] = True
                     station_ref[self.KEY_MONITORED] = True
                 else:
+                    station_ref[self.KEY_CONTROLLABLE] = True if ( (msg.loi_authorized & Message01.LOI_05) == Message01.LOI_05) else False
                     station_ref[self.KEY_CONTROLLED] = False
                     station_ref[self.KEY_MONITORED] = True if ( (msg.loi_granted & Message01.LOI_02) == Message01.LOI_02) else False
 
