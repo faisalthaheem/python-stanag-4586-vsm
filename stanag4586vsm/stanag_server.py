@@ -130,9 +130,17 @@ class StanagServer:
             self.__VSM_ID, self.__VEHICLE_ID, 
             self.__VEHICLE_TYPE, self.__VEHICLE_SUB_TYPE,
             self.tx_data)
+
+        self.__controllable_entities['mast'] = ControllableEntity(
+            loop, 
+            self.debug_level, 0x2,
+            self.__VSM_ID, self.__VEHICLE_ID, 
+            self.__VEHICLE_TYPE, self.__VEHICLE_SUB_TYPE,
+            self.tx_data)
         
-        self.__controllable_entities['base'].set_available_stations(0x01)
+        self.__controllable_entities['base'].set_available_stations(0x01 | 0x02)
         self.__controllable_entities['eo'].set_payload_type(Message300.PAYLOAD_TYPE_EOIR)
+        self.__controllable_entities['mast'].set_payload_type(Message300.PAYLOAD_TYPE_MAST)
 
     def get_entity(self, entity_name):
         if entity_name in self.__controllable_entities.keys():

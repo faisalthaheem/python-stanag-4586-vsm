@@ -11,6 +11,8 @@ from stanag4586edav1.message1200 import *
 from stanag4586edav1.message20000 import *
 from stanag4586edav1.message20010 import *
 from stanag4586edav1.message20020 import *
+from stanag4586edav1.message20030 import *
+from stanag4586edav1.message20040 import *
 class StanagProtocol:
 
     def __init__(self, loop, debug_level, on_msg_rx_callback, on_con_lost_callback, rx_enabled = True):
@@ -61,6 +63,8 @@ class StanagProtocol:
             20000 : Message20000,
             20010 : Message20010,
             20020 : Message20020,
+            20030 : Message20030,
+            20040 : Message20040,
         }
         
 
