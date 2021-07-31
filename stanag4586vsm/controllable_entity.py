@@ -9,6 +9,7 @@ from stanag4586edav1.message300 import *
 
 class ControllableEntity:
 
+    """The id by which a cucs may refer to this station"""
     __station_id = 0x0 #by default we are the base platform
     __vsm_id = 0x0
     __vehicle_id = 0x0
@@ -18,6 +19,7 @@ class ControllableEntity:
     __controlling_cucs_id = 0x0
     __loop = None
     __available_stations = 0x00
+    """Payload type identifies this station as being eo, mast, bay door etc"""
     __payload_type = 0x00
     __callback_unhandled_messages = None
 
@@ -32,6 +34,25 @@ class ControllableEntity:
 
         self.logger = logging.getLogger('ControllableEntity[{}]'.format(self.__station_id))
         self.logger.setLevel(debug_level)
+
+    def getVehicleId(self):
+        return self.__vehicle_id
+    
+    def getStationId(self):
+        return self.__station_id
+
+    def getVehicleType(self):
+        return self.__vehicle_type
+
+    def getVehicleSubType(self):
+        return self.__vehicle_sub_type
+
+    def getControllingCucs(self):
+        return self.__controlling_cucs_id
+
+    def getMonitoringCucs(self):
+        """Returns list of cucs monitroing this station"""
+        return self.__monitoring_cucs_list
 
     def handle_message(self, wrapper, msg):
         """returns true if the message is handled"""
