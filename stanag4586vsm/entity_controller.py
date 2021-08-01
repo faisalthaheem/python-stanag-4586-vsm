@@ -111,8 +111,8 @@ class EntityController:
             self.handle_message_21(wrapper, msg)
             
             # do not raise for paylaod stations
-            if msg.controlled_station == 0:
-                raise_discovery = True
+            # if msg.controlled_station == 0:
+            raise_discovery = True
 
         elif wrapper.message_type == 20:
             self.handle_message_20(wrapper, msg)
