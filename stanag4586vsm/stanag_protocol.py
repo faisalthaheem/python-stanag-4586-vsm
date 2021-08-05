@@ -4,6 +4,7 @@ from stanag4586edav1.message01 import *
 from stanag4586edav1.message20 import *
 from stanag4586edav1.message21 import *
 from stanag4586edav1.message200 import *
+from stanag4586edav1.message201 import *
 from stanag4586edav1.message300 import *
 from stanag4586edav1.message301 import *
 from stanag4586edav1.message302 import *
@@ -56,6 +57,7 @@ class StanagProtocol:
             20 : Message20,
             21 : Message21,
             200 : Message200,
+            201 : Message201,
             300 : Message300,
             301 : Message301,
             302 : Message302,
