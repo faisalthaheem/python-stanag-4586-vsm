@@ -12,7 +12,7 @@ README = (HERE / "README.md").read_text()
 setup(
     name='stanag4586vsm',
     packages=find_packages(include=['stanag4586vsm']),
-    version='0.0.15',
+    version='0.0.16',
     description='Python Stanag 4586 VSM implementation',
     long_description=README,
     long_description_content_type="text/markdown",
