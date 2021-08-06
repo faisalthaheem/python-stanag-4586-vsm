@@ -163,9 +163,17 @@ class StanagServer:
 
         if self.__mode is self.MODE_VEHICLE:
             """If running on the vehicle end"""
-            for k,v in self.__controllable_entities.items():
-                if True == v.handle_message(wrapper, msg):
-                    return
+            station_id = msg.getStationId()
+
+            #preferred and optimized approach to redirect message to the intended station
+            #works for most of the msgs
+            if station_id not in [None, Message01.BROADCAST_ID] and station_id in self.__controllable_entities.keys():
+                self.__controllable_entities[station_id].handle_message(wrapper, msg)
+            else:
+                #for broadcast messages and others that are not directed towards a station
+                for k,v in self.__controllable_entities.items():
+                    if True == v.handle_message(wrapper, msg):
+                        return
 
             if wrapper.message_type != 1:
                 # got a message that was not handled....
