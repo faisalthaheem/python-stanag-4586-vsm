@@ -1,7 +1,6 @@
 import asyncio
 import socket
 import struct
-from types import coroutine
 from .stanag_protocol import StanagProtocol
 from .controllable_entity import ControllableEntity
 from .entity_controller import EntityController
@@ -184,12 +183,9 @@ class StanagServer:
             self.__entities_controller.handle_message(wrapper, msg)
 
 
-    @coroutine
-    def task_discover(self):
+    async def task_discover(self):
         self.logger.debug("Started discover task")
         while True:
-            """Send Msg 01 to discover vehicles on the network"""
-
             msg01 = Message01(Message01.MSGNULL)
             msg01.make_discovery_message(self.__CUCS_ID)
             
@@ -200,5 +196,4 @@ class StanagServer:
             
             self.logger.debug("Discover message sent")
 
-            """Should be read from the config file"""
-            yield from asyncio.sleep(5)
+            await asyncio.sleep(5)
